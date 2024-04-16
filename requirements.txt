@@ -1,0 +1,4 @@
+django
+django-allauth
+django-cors-headers
+channels==3.0.4
