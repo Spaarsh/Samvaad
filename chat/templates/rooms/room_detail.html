@@ -1,26 +1,90 @@
 {% extends "base_generic.html" %}
+{% load static %}
 
 {% block content %}
-    <h2>{{ room.name }}</h2>
-    <p>User ID: {{ user.id }}</p>
-    <!-- Display all previous messages -->
+    <style>
+        body {
+            background-color: white;
+            padding-left: 50px; /* Add left padding equal to the width of the left margin */
+        }
+        #header {
+            background-color: skyblue;
+            text-align: center;
+            padding: 20px;
+        }
+        #header h2 {
+            color: black;
+        }
+        #logo {
+            background-color: yellow;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%; /* Make the logo circular */
+        }
+        .message {
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            width: 50%; /* Make the message boxes half the width of the screen */
+        }
+        .message.other {
+            background-color: blue;
+            color: white;
+            text-align: left;
+        }
+        .message.self {
+            background-color: lightgreen;
+            text-align: right; /* Align the messages from the current user to the right */
+        }
+        .timestamp {
+            font-size: 0.8em;
+        }
+        #post-message input[type="text"] {
+            width: 80%;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            margin: 10px 0;
+            display: inline-block;
+        }
+        /*#post-message button {
+            display: none;
+        }*/
+        /* Add a left margin with sky blue color */
+        .left-margin {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 50px;
+            height: 100%;
+            background-color: skyblue;
+        }
+    </style>
+
+    <div class="left-margin"></div>
+
+    <div id="logo">
+        <!-- Add your image here -->
+    </div>
+
+    <div id="header">
+        <h2>{{ room.name }}</h2>
+    </div>
+
     <div id="chat-log">
         {% for message in messages %}
-            {% if message.user == user %}
-                <div style="color: blue;">
-                    <strong>{{ message.user.username }}:</strong> {{ message.content }}
-                </div>
-            {% else %}
-                <div style="color: black;">
-                    <strong>{{ message.user.username }}:</strong> {{ message.content }}
-                </div>
-            {% endif %}
+            <div class="message {% if message.user == user %}self{% else %}other{% endif %}">
+                <strong>{{ message.user.username }}:</strong> {{ message.content }}
+                <div class="timestamp">{{ message.timestamp }}</div>
+            </div>
         {% endfor %}
     </div>
 
-    <!-- Form to post a new message -->
     <form id="post-message">
-        <input type="text" id="message-input">
+        <input type="text" id="message-input" placeholder="Enter your awesome message here">
         <input type="hidden" id="user-id" value="{{ user.id }}">
         <input type="hidden" id="room-id" value="{{ room.id }}">
         <button type="submit">Send</button>
@@ -32,17 +96,28 @@
         var socket = new WebSocket(
             'ws://' + window.location.host +
             '/ws/room/{{ room.name }}/');
+        
+            var userId = document.querySelector('#user-id').value;
+        var roomId = document.querySelector('#room-id').value;
+
 
         socket.onmessage = function(e) {
             var data = JSON.parse(e.data);
+            console.log(data)
+            console.log(data['username'])
             var message = data['message'];
+            var messageColor = data['user_id'] == userId ? 'blue' : 'black';
+
+            // Create a new message element
+            var messageElem = document.createElement('div');
+            messageElem.style.color = messageColor;
+            messageElem.innerHTML = '<strong>' + data['username'] + ':</strong> ' + message;
 
             // Add the message to the chat log
-            document.querySelector('#chat-log').innerHTML += (
-                '<div>' +
-                '<strong>' + data['username'] + ':</strong> ' +
-                message +
-                '</div>');
+            document.querySelector('#chat-log').appendChild(messageElem);
+
+            // Scroll to the bottom of the chat log
+    chatLog.scrollTop = chatLog.scrollHeight;
         };
 
         socket.onclose = function(e) {
