@@ -1,7 +1,7 @@
 import './App.css';
 
 import React, { useEffect, useState } from 'react';
-import RoomDetail from './RoomDetail';
+import RoomDetail from './components/RoomDetail';
 
 const App = () => {
     const [userData, setUserData] = useState(null);
