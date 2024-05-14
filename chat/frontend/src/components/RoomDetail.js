@@ -1,10 +1,16 @@
 import React, { useEffect, useState, useRef } from 'react';
 import WebSocket from 'react-websocket';
 
-const RoomDetail = ({ room, user, messages }) => {
+const RoomDetail = ({ room, user }) => {
     const [messageInput, setMessageInput] = useState('');
-    const [chatLog, setChatLog] = useState(messages);
+    const [chatLog, setChatLog] = useState([]);
     const socketRef = useRef(null);
+
+    useEffect(() => {
+        fetch(`http://localhost:8000/rooms/room/<room_name>/`)  // replace with your actual API endpoint
+            .then(response => response.json())
+            .then(data => setChatLog(data.messages));  // replace 'messages' with the actual field name in your API response
+    }, [room]);
 
     const handleData = (data) => {
         const result = JSON.parse(data);
