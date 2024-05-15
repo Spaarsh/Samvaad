@@ -1,14 +1,40 @@
 {% extends "base_generic.html" %}
+{% load static %}
 
 {% block content %}
-    <h2>Rooms</h2>
-    <ul>
-        {% for room in object_list %}
-            <li>
-                <a href="{% url 'rooms:room_detail' room.name %}">{{ room.name }}</a>
-            </li>
-        {% empty %}
-            <li>No rooms available.</li>
-        {% endfor %}
-    </ul>
+    <style>
+        .card-img-top {
+            width: 100%;
+            height: 200px; /* Adjust this value to change the height of the images */
+            object-fit: cover;
+            object-position: center;
+            border: 1px solid black;
+        }
+    </style>
+    <div class="container">
+        <div class="jumbotron text-center">
+            <h1>Welcome back, {{ request.user.username }}</h1>
+        </div>
+        <div class="row">
+            {% for room in object_list %}
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        <img class="card-img-top" src="{% static 'room_logos/'|add:room.name|add:'.jpg' %}" alt="Room logo">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <a href="{% url 'rooms:room_detail' room.name %}">{{ room.name }}</a>
+                            </h5>
+                        </div>
+                    </div>
+                </div>
+                {% if forloop.counter|divisibleby:3 and not forloop.last %}
+                    </div><div class="row">
+                {% endif %}
+            {% empty %}
+                <div class="col-12">
+                    <p>No rooms available.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
 {% endblock %}
