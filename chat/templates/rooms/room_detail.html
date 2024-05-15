@@ -67,7 +67,7 @@
     <div class="left-margin"></div>
 
     <div id="logo">
-        <!-- Add your image here -->
+        <img src="{% static 'room_logos/'|add:room.name|stringformat:"s"|add:'.jpg' %}" alt="Logo">
     </div>
 
     <div id="header">
@@ -94,65 +94,105 @@
     <script>
         // Connect to the WebSocket
         var socket = new WebSocket(
-            'ws://' + window.location.host +
-            '/ws/room/{{ room.name }}/');
-        
-            var userId = document.querySelector('#user-id').value;
-        var roomId = document.querySelector('#room-id').value;
+    'ws://' + window.location.host +
+    '/ws/room/{{ room.name }}/'
+);
 
+// Connect to the WebSocket
+var socket = new WebSocket('ws://' + window.location.host + '/ws/room/{{ room.name }}/');
+var roomId = document.querySelector('#room-id').value;
+var chatLog = document.querySelector('#chat-log'); // Define chatLog here
 
-        socket.onmessage = function(e) {
-            var data = JSON.parse(e.data);
-            console.log(data)
-            console.log(data['username'])
-            var message = data['message'];
-            var messageColor = data['user_id'] == userId ? 'blue' : 'black';
+socket.onmessage = function(e) {
+    var data = JSON.parse(e.data);
+    console.log(data);
 
-            // Create a new message element
-            var messageElem = document.createElement('div');
-            messageElem.style.color = messageColor;
-            messageElem.innerHTML = '<strong>' + data['username'] + ':</strong> ' + message;
+    var message = data['message'];
+    var messageColorClass;
 
-            // Add the message to the chat log
-            document.querySelector('#chat-log').appendChild(messageElem);
+    var userId = parseInt(document.querySelector('#user-id').value); // Parse userId as integer
 
-            // Scroll to the bottom of the chat log
+    console.log('userId:', userId);
+    console.log('data[\'user_id\']:', data['userId']);
+
+    if (data['userId'] === userId) {
+        messageColorClass = 'self';
+    } else {
+        messageColorClass = 'other';
+    }
+
+    var timestamp = new Date(data['timestamp']);
+    var formattedTimestamp = timestamp.toLocaleString('en-US', {
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true,
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    });
+
+    // Create a new message element
+    var messageElem = document.createElement('div');
+    messageElem.classList.add('message', messageColorClass); // Add message and color class
+
+    // Create strong element for username
+    var usernameElem = document.createElement('strong');
+    usernameElem.textContent = data['username'] + ': ';
+
+    // Create text node for message content
+    var messageContent = document.createTextNode(message);
+
+    // Create div for timestamp
+    var timestampElem = document.createElement('div');
+    timestampElem.classList.add('timestamp');
+    timestampElem.textContent = formattedTimestamp;
+
+    // Append username, message content, and timestamp to message element
+    messageElem.appendChild(usernameElem);
+    messageElem.appendChild(messageContent);
+    messageElem.appendChild(timestampElem);
+
+    // Add the message to the chat log
+    chatLog.appendChild(messageElem);
+
+    // Scroll to the bottom of the chat log
     chatLog.scrollTop = chatLog.scrollHeight;
-        };
+};
 
-        socket.onclose = function(e) {
-            console.error('Chat socket closed unexpectedly');
-        };
+// Other WebSocket event handlers...
 
-        document.querySelector('#post-message').onsubmit = function(e) {
-            e.preventDefault();
 
-            // Retrieve the input field's value
-            var messageInputDom = document.querySelector('#message-input');
-            var message = messageInputDom.value;
+socket.onclose = function(e) {
+    console.error('Chat socket closed unexpectedly');
+};
 
-            // Retrieve the user ID and room ID
-            var userId = document.querySelector('#user-id').value;
-            var roomId = document.querySelector('#room-id').value;
+document.querySelector('#post-message').onsubmit = function(e) {
+    e.preventDefault();
 
-            // Print the user ID and room ID to the console
-            console.log('User ID:', userId);
-            console.log('Room ID:', roomId);
+    // Retrieve the input field's value
+    var messageInputDom = document.querySelector('#message-input');
+    var message = messageInputDom.value;
 
-            // Get the current timestamp
-            var timestamp = new Date().toISOString();
+    // Retrieve the user ID and room ID
+    var userId = document.querySelector('#user-id').value;
+    var roomId = document.querySelector('#room-id').value;
 
-            // Send the message to the server
-            socket.send(JSON.stringify({
-                'message': message,
-                'user_id': userId,
-                'room_id': roomId,
-                'timestamp': timestamp
-            }));
+    // Get the current timestamp
+    var timestamp = new Date().toISOString();
 
-            // Clear the input field and focus it
-            messageInputDom.value = '';
-            messageInputDom.focus();
-        };
+    // Send the message to the server
+    socket.send(JSON.stringify({
+        'message': message,
+        'user_id': userId,
+        'room_id': roomId,
+        'timestamp': timestamp
+    }));
+
+    // Clear the input field and focus it
+    messageInputDom.value = '';
+    messageInputDom.focus();
+};
+
+
     </script>
 {% endblock %}

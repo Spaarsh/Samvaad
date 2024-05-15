@@ -33,13 +33,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
         text_data_json = json.loads(text_data)
         print(f"Received message: {text_data_json}")
         message = text_data_json['message']
-        user_id = text_data_json['user_id']
+        user_id = int(text_data_json['user_id'])  # Convert user_id to integer
         # Get the username from the scope
         username = self.scope['user'].username
         print(f"User id: {user_id}")
 
         room = await self.get_room()
         user = await self.get_user(user_id)
+        if not user:
+            # Handle case where user does not exist
+            print(f"User with id {user_id} does not exist.")
+            return
+
         await self.create_message(room, user, message)
 
         print(f"this is the user: {user}")
@@ -52,6 +57,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'type': 'chat_message',
                 'message': message,
                 'username': username,
+                'userId': user_id,
             }
         )
 
@@ -80,9 +86,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def chat_message(self, event):
         message = event['message']
         username = event['username']
+        userId=event['userId']
+        timestamp=timezone.now().isoformat()
 
         # Send message to WebSocket
         await self.send(text_data=json.dumps({
             'message': message,
-            'username':username
+            'username':username,
+            'userId':userId,
+            'timestamp':timestamp
         }))
