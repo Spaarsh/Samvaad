@@ -2,66 +2,120 @@
 {% load static %}
 
 {% block content %}
+<div id="gradient-div" style="position: fixed; width: 5%; height: 100%; background: linear-gradient(180deg, #27617B 10%, #F3CE93 59%, #FFE0AB 73%, #FFE0AB 87%, #DAB984 100%), linear-gradient(54deg, rgba(128.92, 43.33, 43.33, 0) 0%, rgba(39, 97, 123, 0.66) 100%), linear-gradient(142deg, rgba(0, 0, 0, 0) 0%, rgba(47, 149, 118, 0.52) 100%); box-shadow: 12.600000381469727px 12.600000381469727px 12.600000381469727px; filter: blur(12.60px); left: 0; top: 0; z-index: 2;">
+    <div class="room-logos">
+        {% for room in rooms %}
+            <img class="room-logo" src="{% static 'room_logos/'|add:room.name|stringformat:"s"|add:'.jpg' %}" alt="{{ room.name }}">
+        {% endfor %}
+    </div>
+</div>
     <style>
         body {
-            background-color: white;
-            padding-left: 50px; /* Add left padding equal to the width of the left margin */
+            
+            background: linear-gradient(217deg, #27617B 0%, #2F9576 100%);
+            background-attachment: fixed;
         }
         #header {
-            background-color: skyblue;
+            text-decoration-color: white;
             text-align: center;
             padding: 20px;
+            position: fixed;
+            width: 100%;
+            height: auto;
+            left: 0;
+            top: 0;
+            z-index: 1;
+            background-color: white;
+        }
+
+        #chat-log {
+            padding-top: 60px; /* Adjust this value as needed */
         }
         #header h2 {
             color: black;
         }
         #logo {
-            background-color: yellow;
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 50px;
             height: 50px;
             border-radius: 50%; /* Make the logo circular */
+    z-index: 2; /* Ensure the logo stays on top */
+        }
+        .room-logos {
+            display: flex;
+            flex-direction: column;
+            margin-left: 0;
         }
         .message {
+            background-color: white;
+            text-decoration-color: black;
             border-radius: 10px;
             padding: 10px;
             margin-bottom: 10px;
-            width: 50%; /* Make the message boxes half the width of the screen */
+            width: auto; /* Make the message boxes cover the full width of the screen on mobile devices */
+            clear: both; /* Clear the float property to prevent overlapping messages */
+        }
+
+        .message strong {
+            display: block; /* Make the username take up the full width of its parent */
+
+        }
+
+        @media (min-width: 600px) {
+            .message {
+                width: 50%; /* Make the message boxes half the width of the screen on larger devices */
+            }
         }
         .message.other {
-            background-color: blue;
-            color: white;
             text-align: left;
+            float: left; /* Align the messages from other users to the left */
+            width: 68%;
         }
         .message.self {
-            background-color: lightgreen;
-            text-align: right; /* Align the messages from the current user to the right */
+            /* Align the messages from the current user to the right */
+            float: right; /* Align the messages from the current user to the right */
+            width: 68%;
         }
+.message.other strong {
+    text-align: left; /* Align the username to the left for .message.other */
+}
+
+.message.self strong {
+    text-align: right; /* Align the username to the right for .message.self */
+}
+#gradient-div {
+        position: fixed;
+        width: 5px; /* Set the width of the gradient div */
+        height: 100%;
+        /* Other styles... */
+        z-index: -1;
+    }
         .timestamp {
             font-size: 0.8em;
         }
+        #post-message{
+            z-index: 2;
+            display:flex;
+            justify-content: space-between;
+            position:fixed;
+            bottom: 0;
+            width:100%;
+            border:1px;
+        }
         #post-message input[type="text"] {
-            width: 80%;
+            width: 100%;
             padding: 10px;
             border-radius: 10px;
-            border: none;
             margin: 10px 0;
             display: inline-block;
+            background-color: #a5e2ff;
         }
-        /*#post-message button {
-            display: none;
-        }*/
+        #post-message button {
+            width: 5%;
+        }
         /* Add a left margin with sky blue color */
-        .left-margin {
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 50px;
-            height: 100%;
-            background-color: skyblue;
-        }
 
         #logo img {
         width: 100%;
@@ -71,24 +125,28 @@
     }
     </style>
 
-    <div class="left-margin"></div>
 
-    <div id="logo">
-        <img src="{% static 'room_logos/'|add:room.name|stringformat:"s"|add:'.jpg' %}" alt="Logo">
-    </div>
+<div id="header" style="position: fixed; width: 100%; height: auto; left: 0; top: 0; z-index: 1;background-color:white ;float: right;">
+    <h2 style="text-align: center;">{{ room.name }}</h2>
+</div>
 
-    <div id="header">
-        <h2>{{ room.name }}</h2>
-    </div>
+<div id="logo" style="position: fixed; width: 5%; height: 10%; left: 0;">
+    <img src="{% static 'room_logos/'|add:room.name|stringformat:"s"|add:'.jpg' %}" alt="Logo" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+</div>
 
+<div id="chat-log" style="margin-left: 10%;">
     <div id="chat-log">
         {% for message in messages %}
             <div class="message {% if message.user == user %}self{% else %}other{% endif %}">
-                <strong>{{ message.user.username }}:</strong> {{ message.content }}
+                {% if message.user != user %}
+                    <strong>{{ message.user.username }}</strong>
+                {% endif %}
+                {{ message.content }}
                 <div class="timestamp">{{ message.timestamp }}</div>
             </div>
         {% endfor %}
     </div>
+</div>
 
     <form id="post-message">
         <input type="text" id="message-input" placeholder="Enter your awesome message here">
@@ -109,6 +167,13 @@
 var socket = new WebSocket('ws://' + window.location.host + '/ws/room/{{ room.name }}/');
 var roomId = document.querySelector('#room-id').value;
 var chatLog = document.querySelector('#chat-log'); // Define chatLog here
+
+// Create a list of fonts
+var fonts = ['Arial', 'Verdana', 'Courier', 'Times New Roman', 'Georgia'];
+
+// Assign a font to each user when they start a session
+var userFont = fonts[Math.floor(Math.random() * fonts.length)];
+sessionStorage.setItem('userFont', userFont);
 
 socket.onmessage = function(e) {
     var data = JSON.parse(e.data);
@@ -142,20 +207,31 @@ socket.onmessage = function(e) {
     var messageElem = document.createElement('div');
     messageElem.classList.add('message', messageColorClass); // Add message and color class
 
+    // Set the font of the message to the user's font
+    messageElem.style.fontFamily = sessionStorage.getItem('userFont');
+
     // Create strong element for username
     var usernameElem = document.createElement('strong');
-    usernameElem.textContent = data['username'] + ': ';
-
-    // Create text node for message content
-    var messageContent = document.createTextNode(message);
+    
+    usernameElem.style.display = 'block'; // Add this line
 
     // Create div for timestamp
     var timestampElem = document.createElement('div');
     timestampElem.classList.add('timestamp');
     timestampElem.textContent = formattedTimestamp;
-
+    
+    // Create text node for message content
+    var messageContent = document.createTextNode(message);
+    
     // Append username, message content, and timestamp to message element
     messageElem.appendChild(usernameElem);
+    messageElem.appendChild(messageContent);
+    messageElem.appendChild(timestampElem);
+
+    // Append username, message content, and timestamp to message element
+    if (data['userId'] != userId) {
+        usernameElem.textContent = data['username'];
+    }
     messageElem.appendChild(messageContent);
     messageElem.appendChild(timestampElem);
 
