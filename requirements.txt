@@ -4,3 +4,4 @@ django-cors-headers
 channels==3.0.4
 django-rest-framework
 Pillow
+gunicorn
